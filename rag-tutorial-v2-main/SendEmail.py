@@ -18,7 +18,7 @@ contracts = [
     {
         "user": "Vedant Utpat",
         "email": "vedantutpat084@gmail.com",
-        "end_date": "2025-09-18"
+        "end_date": "2025-09-26"
     }
 ]
 
@@ -48,6 +48,27 @@ def send_email(to_email, subject, body):
 # CHECK CONTRACT DATES
 # -----------------------------
 def check_contracts():
+    today = datetime.date.today()
+    for contract in contracts:
+        end_date = datetime.datetime.strptime(contract["end_date"], "%Y-%m-%d").date()
+        days_left = (end_date - today).days
+
+        # Subject + body always mention days left
+        subject = f"Contract Status: {contract['user']} (Ends on {end_date})"
+        
+        body = (
+            f"Hello {contract['user']},\n\n"
+            f"This is an automated reminder about your contract.\n\n"
+            f"📅 Contract End Date: {end_date}\n"
+            f"⏳ Days Left: {days_left}\n\n"
+            f"Regards,\nContract Analyzer Team"
+        )
+
+        # Send email always
+        send_email(contract["email"], subject, body)
+        print(f"✅ Email sent to {contract['user']} ({days_left} days left)")
+
+def check_contracts_old():
     today = datetime.date.today()
     for contract in contracts:
         end_date = datetime.datetime.strptime(contract["end_date"], "%Y-%m-%d").date()

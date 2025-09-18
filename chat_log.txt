@@ -17,3 +17,19 @@ BOT (2025-09-18 20:08:15): 📝 Recognized: hello what is the text speaking
 USER (2025-09-18 20:08:15): hello what is the text speaking
 USER (2025-09-18 20:08:24): hello what is the text speaking
 BOT (2025-09-18 20:08:24): olllama response model
+USER (2025-09-18 20:38:39): give 3 rules of monopoly
+BOT (2025-09-18 20:38:39):  Based on the provided context, here are three rules of Monopoly:
+
+1. A player's aim is to become the monopolist by owning all properties of a color group and building hotels on them.
+2. When a player lands on a property that another player owns, the owner can demand rent from the player according to the prices printed on the title deed or hotel.
+3. If a player cannot pay the demanded rent, they must give up one randomly chosen property of their choice to the property owner. If a player still cannot pay, they are bankrupt and eliminated from the game.
+USER (2025-09-18 20:40:06): what not to do to loose monopoly
+BOT (2025-09-18 20:40:06):  Based on the provided context, to avoid losing a monopoly, one should not allow new competitors, maintain high barriers to entry, continuously innovate and improve their product or service, set prices higher than the competition, and avoid providing poor quality products or services. Additionally, it is essential to maintain good relationships with customers and comply with all relevant laws and regulations.
+BOT (2025-09-18 20:51:45): 📄 PDF Uploaded & Saved To: C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data\ticket_to_ride.pdf
+BOT (2025-09-18 21:56:02): ⚠ No speech recognized yet.
+BOT (2025-09-18 21:58:19): ⚠ No speech recognized yet.
+BOT (2025-09-18 21:58:45): ⚡ Processing: 
+BOT (2025-09-18 22:00:31): ⚡ Processing: 
+BOT (2025-09-18 22:00:31): ⚡ Processed!! Feel Free to Ask Me! : 
+BOT (2025-09-18 22:24:49): 📧 Saved Contact: Name: vedu utpat, Email: namratasukate3103@gmail.com
+BOT (2025-09-18 23:16:54): 📧 Saved Contact: Name: vedu, Email: vedantutpat084@gmail.com

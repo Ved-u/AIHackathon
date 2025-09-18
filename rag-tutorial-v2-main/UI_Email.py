@@ -5,6 +5,7 @@ import speech_recognition as sr
 from datetime import datetime
 import query_data
 import populate_database
+import UI_EmailConnect
 import os
 import shutil
 
@@ -17,79 +18,38 @@ last_recognized_text = ""  # Store last recognized speech
 typing_label = None
 mic_animation_job = None
 
-
 # ---------- Helper: Save logs ----------
 def save_to_file(sender, message, filename="chat_log.txt"):
     """Save a message to a file."""
     with open(filename, "a", encoding="utf-8") as f:
         f.write(f"{sender.upper()} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}): {message}\n")
 
-
-# ---------- Functions ----------
-def upload_pdf_old():
-    file_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
-    if file_path:
-        add_message(f"📄 PDF Uploaded:\n{file_path}", sender="bot")
-        save_to_file("bot", f"📄 PDF Uploaded: {file_path}")
-
 # ---------- Functions ----------
 def upload_pdf():
-    # Let user choose a PDF
+    """Let user choose a PDF and copy to data folder"""
     file_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
     if file_path:
-        # Destination folder
         dest_folder = r"C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data"
-        # Ensure folder exists
         os.makedirs(dest_folder, exist_ok=True)
-        # Get just the filename (e.g., "doc.pdf")
         file_name = os.path.basename(file_path)
-        # Full destination path
         dest_path = os.path.join(dest_folder, file_name)
-        # Copy file
         shutil.copy(file_path, dest_path)
-        # Update chat window + log
         add_message(f"📄 PDF Uploaded & Saved To:\n{dest_path}", sender="bot")
         save_to_file("bot", f"📄 PDF Uploaded & Saved To: {dest_path}")
 
-
 def send_message(event=None):
-    """Handle user message and display bot response from output.txt"""
     user_input = message_entry.get()
     if user_input.strip():
-        # Save user input (overwrite previous content)
         with open("input.txt", "w", encoding="utf-8") as f:
             f.write(user_input)
 
-        # Display user input in chat
         add_message(user_input, sender="user")
         save_to_file("user", user_input)
         message_entry.delete(0, tk.END)
 
-        # Read bot response from output.txt
-        try:
-            with open("output.txt", "r", encoding="utf-8") as f:
-                bot_response = f.read().strip()
-                if not bot_response:
-                    bot_response = "🤖 No response found in output.txt"
-        except FileNotFoundError:
-            bot_response = "🤖 output.txt not found."
-
-        # Get Response from LLM
         bot_response = query_data.query_rag(user_input)
-        # Display bot response
         add_message(bot_response, sender="bot")
         save_to_file("bot", bot_response)
-
-
-def process_button_action_old():
-    if last_recognized_text:
-        bot_message = f"⚡ Processing: {last_recognized_text}"
-        add_message(bot_message, sender="bot")
-        save_to_file("bot", bot_message)
-    else:
-        bot_message = "⚠ No speech recognized yet."
-        add_message(bot_message, sender="bot")
-        save_to_file("bot", bot_message)
 
 def process_button_action():
     bot_message = f"⚡ Processing: {last_recognized_text}"
@@ -101,14 +61,11 @@ def process_button_action():
     save_to_file("bot", bot_message)
 
 def add_message(message, sender="user"):
-    """Add a message bubble to the chat"""
     bubble_color = "#D0F0FD" if sender == "user" else "#F0F0F0"
     text_color = "#000000"
     anchor_side = "e" if sender == "user" else "w"
-
     bubble_frame = tk.Frame(chat_inner_frame, bg="#E8EEF1")
     bubble_frame.pack(fill="x", pady=6, padx=12, anchor=anchor_side)
-
     timestamp = datetime.now().strftime("%H:%M")
     msg_label = tk.Label(
         bubble_frame,
@@ -125,11 +82,9 @@ def add_message(message, sender="user"):
         relief="solid"
     )
     msg_label.pack(anchor=anchor_side, fill="x")
-
     chat_canvas.update_idletasks()
     chat_canvas.yview_moveto(1.0)
     return msg_label
-
 
 # ---------- Speech Recognition Functions ----------
 def toggle_recording():
@@ -151,13 +106,11 @@ def toggle_recording():
         add_message("🎙 Recording stopped.", sender="bot")
         save_to_file("bot", "🎙 Recording stopped.")
 
-
 def animate_mic(step=0):
     global mic_animation_job
     colors = ["#FF5252", "#FF1744", "#F44336"]
     mic_button.config(bg=colors[step % len(colors)])
     mic_animation_job = root.after(300, animate_mic, step + 1)
-
 
 def real_time_listen():
     global stop_thread
@@ -169,7 +122,6 @@ def real_time_listen():
                 threading.Thread(target=process_audio, args=(audio,), daemon=True).start()
             except sr.WaitTimeoutError:
                 continue
-
 
 def process_audio(audio):
     global last_recognized_text
@@ -187,6 +139,34 @@ def process_audio(audio):
         add_message("⚠ Speech recognition service unavailable.", sender="bot")
         save_to_file("bot", "⚠ Speech recognition service unavailable.")
 
+# ---------- Email Popup Function ----------
+def open_email_popup():
+    popup = tk.Toplevel(root)
+    popup.title("Add Email")
+    popup.geometry("300x200")
+    popup.config(bg="#E8EEF1")
+
+    tk.Label(popup, text="Enter Name:", bg="#E8EEF1", font=("Segoe UI", 11)).pack(pady=5)
+    name_entry = tk.Entry(popup, font=("Segoe UI", 11))
+    name_entry.pack(pady=5, padx=10, fill="x")
+
+    tk.Label(popup, text="Enter Email:", bg="#E8EEF1", font=("Segoe UI", 11)).pack(pady=5)
+    email_entry = tk.Entry(popup, font=("Segoe UI", 11))
+    email_entry.pack(pady=5, padx=10, fill="x")
+
+    def save_email_info():
+        name = name_entry.get().strip()
+        email = email_entry.get().strip()
+        if name and email:
+            add_message(f"📧 Saved Contact:\nName: {name}, Email: {email}", sender="bot")
+            save_to_file("bot", f"📧 Saved Contact: Name: {name}, Email: {email}")
+            popup.destroy()
+        else:
+            tk.Label(popup, text="⚠ Please fill all fields!", fg="red", bg="#E8EEF1").pack()
+        UI_EmailConnect.add_contract_and_notify(name, email)
+
+    tk.Button(popup, text="Save", bg="#4CAF50", fg="white", font=("Segoe UI", 11, "bold"),
+              relief="flat", command=save_email_info).pack(pady=15)
 
 # ---------- UI Setup ----------
 root = tk.Tk()
@@ -202,15 +182,11 @@ paned.pack(fill=tk.BOTH, expand=True)
 sidebar_frame = tk.Frame(paned, bg="#1E2A38", width=240)
 sidebar_frame.pack_propagate(False)
 
-tk.Label(
-    sidebar_frame, text="≡", bg="#1E2A38", fg="white",
-    font=("Segoe UI", 20, "bold")
-).pack(pady=15, anchor="w", padx=15)
+tk.Label(sidebar_frame, text="≡", bg="#1E2A38", fg="white",
+         font=("Segoe UI", 20, "bold")).pack(pady=15, anchor="w", padx=15)
 
-tk.Label(
-    sidebar_frame, text="CHAT\nBOT", bg="#1E2A38", fg="white",
-    font=("Segoe UI", 26, "bold"), justify="left"
-).pack(pady=20, anchor="w", padx=15)
+tk.Label(sidebar_frame, text="CHAT\nBOT", bg="#1E2A38", fg="white",
+         font=("Segoe UI", 26, "bold"), justify="left").pack(pady=20, anchor="w", padx=15)
 
 btn_style = {
     "font": ("Segoe UI", 12, "bold"),
@@ -220,21 +196,19 @@ btn_style = {
     "fg": "white"
 }
 
-tk.Button(
-    sidebar_frame, text="Upload PDF", bg="#4CAF50",
-    command=upload_pdf, **btn_style
-).pack(pady=15, padx=20, fill="x")
+tk.Button(sidebar_frame, text="Upload PDF", bg="#4CAF50",
+          command=upload_pdf, **btn_style).pack(pady=15, padx=20, fill="x")
 
-tk.Button(
-    sidebar_frame, text="Process", bg="#3F51B5",
-    command=process_button_action, **btn_style
-).pack(pady=15, padx=20, fill="x")
+tk.Button(sidebar_frame, text="Process", bg="#3F51B5",
+          command=process_button_action, **btn_style).pack(pady=15, padx=20, fill="x")
+
+tk.Button(sidebar_frame, text="Add Email", bg="#FF9800",
+          command=open_email_popup, **btn_style).pack(pady=15, padx=20, fill="x")
 
 paned.add(sidebar_frame, width=240)
 
 # Chat Area
 chat_frame = tk.Frame(paned, bg="#E8EEF1")
-
 chat_canvas = tk.Canvas(chat_frame, bg="#E8EEF1", highlightthickness=0)
 chat_scrollbar = ttk.Scrollbar(chat_frame, orient="vertical", command=chat_canvas.yview)
 chat_scrollbar.pack(side="right", fill="y")
@@ -253,23 +227,17 @@ chat_inner_frame.bind(
 bottom_frame = tk.Frame(chat_frame, bg="#FFFFFF", bd=1, relief="solid")
 bottom_frame.pack(side="bottom", fill="x", pady=5, padx=5)
 
-message_entry = tk.Entry(
-    bottom_frame, font=("Segoe UI", 12),
-    relief="flat", bg="#F5F5F5", bd=0
-)
+message_entry = tk.Entry(bottom_frame, font=("Segoe UI", 12),
+                         relief="flat", bg="#F5F5F5", bd=0)
 message_entry.pack(side="left", fill="x", expand=True, padx=(0, 8), pady=5)
 message_entry.bind("<Return>", send_message)
 
-mic_button = tk.Button(
-    bottom_frame, text="🎤 Start", font=("Segoe UI", 12, "bold"),
-    bg="#4CAF50", fg="white", relief="flat", command=toggle_recording
-)
+mic_button = tk.Button(bottom_frame, text="🎤 Start", font=("Segoe UI", 12, "bold"),
+                       bg="#4CAF50", fg="white", relief="flat", command=toggle_recording)
 mic_button.pack(side="left", padx=5, pady=5)
 
-send_button = tk.Button(
-    bottom_frame, text="➤", font=("Segoe UI", 12, "bold"),
-    bg="#2196F3", fg="white", relief="flat", command=send_message
-)
+send_button = tk.Button(bottom_frame, text="➤", font=("Segoe UI", 12, "bold"),
+                        bg="#2196F3", fg="white", relief="flat", command=send_message)
 send_button.pack(side="right", pady=5)
 
 paned.add(chat_frame)
