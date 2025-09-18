@@ -1,0 +1,19 @@
+USER (2025-09-18 19:48:36): gg
+BOT (2025-09-18 19:48:36): 🤖 output.txt not found.
+USER (2025-09-18 19:49:07): jjj
+BOT (2025-09-18 19:49:07): lalaland
+USER (2025-09-18 20:06:06): input11212
+BOT (2025-09-18 20:06:06): lalalandBOT: Bot reply to: hhhh
+BOT: Bot reply to: hhhhfcewujief bwi
+USER (2025-09-18 20:07:08): query
+BOT (2025-09-18 20:07:08): olllama response model
+BOT (2025-09-18 20:07:54): 🎙 Recording... Speak now.
+BOT (2025-09-18 20:07:58): 🎙 Recording stopped.
+BOT (2025-09-18 20:08:10): 🎙 Recording... Speak now.
+BOT (2025-09-18 20:08:12): 📝 Recognized: hello hello What is the
+USER (2025-09-18 20:08:12): hello hello What is the
+BOT (2025-09-18 20:08:14): 🎙 Recording stopped.
+BOT (2025-09-18 20:08:15): 📝 Recognized: hello what is the text speaking
+USER (2025-09-18 20:08:15): hello what is the text speaking
+USER (2025-09-18 20:08:24): hello what is the text speaking
+BOT (2025-09-18 20:08:24): olllama response model
