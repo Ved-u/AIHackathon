@@ -1,35 +1,28 @@
-USER (2025-09-18 19:48:36): gg
-BOT (2025-09-18 19:48:36): 🤖 output.txt not found.
-USER (2025-09-18 19:49:07): jjj
-BOT (2025-09-18 19:49:07): lalaland
-USER (2025-09-18 20:06:06): input11212
-BOT (2025-09-18 20:06:06): lalalandBOT: Bot reply to: hhhh
-BOT: Bot reply to: hhhhfcewujief bwi
-USER (2025-09-18 20:07:08): query
-BOT (2025-09-18 20:07:08): olllama response model
-BOT (2025-09-18 20:07:54): 🎙 Recording... Speak now.
-BOT (2025-09-18 20:07:58): 🎙 Recording stopped.
-BOT (2025-09-18 20:08:10): 🎙 Recording... Speak now.
-BOT (2025-09-18 20:08:12): 📝 Recognized: hello hello What is the
-USER (2025-09-18 20:08:12): hello hello What is the
-BOT (2025-09-18 20:08:14): 🎙 Recording stopped.
-BOT (2025-09-18 20:08:15): 📝 Recognized: hello what is the text speaking
-USER (2025-09-18 20:08:15): hello what is the text speaking
-USER (2025-09-18 20:08:24): hello what is the text speaking
-BOT (2025-09-18 20:08:24): olllama response model
-USER (2025-09-18 20:38:39): give 3 rules of monopoly
-BOT (2025-09-18 20:38:39):  Based on the provided context, here are three rules of Monopoly:
+BOT (2025-09-19 19:12:11): 📄 PDF Uploaded & Saved To: C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data\Indian-Contract-Act-1872-20200816140128.pdf
+BOT (2025-09-19 19:12:25): ⚡ Processing: 
+BOT (2025-09-19 19:12:26): ⚡ Processed!! Feel Free to Ask Me! : 
+USER (2025-09-19 19:13:03): how many sections in this contract
+BOT (2025-09-19 19:13:10):  Based on the provided context, there are four (4) sections in this contract. The sections are labeled as follows:
 
-1. A player's aim is to become the monopolist by owning all properties of a color group and building hotels on them.
-2. When a player lands on a property that another player owns, the owner can demand rent from the player according to the prices printed on the title deed or hotel.
-3. If a player cannot pay the demanded rent, they must give up one randomly chosen property of their choice to the property owner. If a player still cannot pay, they are bankrupt and eliminated from the game.
-USER (2025-09-18 20:40:06): what not to do to loose monopoly
-BOT (2025-09-18 20:40:06):  Based on the provided context, to avoid losing a monopoly, one should not allow new competitors, maintain high barriers to entry, continuously innovate and improve their product or service, set prices higher than the competition, and avoid providing poor quality products or services. Additionally, it is essential to maintain good relationships with customers and comply with all relevant laws and regulations.
-BOT (2025-09-18 20:51:45): 📄 PDF Uploaded & Saved To: C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data\ticket_to_ride.pdf
-BOT (2025-09-18 21:56:02): ⚠ No speech recognized yet.
-BOT (2025-09-18 21:58:19): ⚠ No speech recognized yet.
-BOT (2025-09-18 21:58:45): ⚡ Processing: 
-BOT (2025-09-18 22:00:31): ⚡ Processing: 
-BOT (2025-09-18 22:00:31): ⚡ Processed!! Feel Free to Ask Me! : 
-BOT (2025-09-18 22:24:49): 📧 Saved Contact: Name: vedu utpat, Email: namratasukate3103@gmail.com
-BOT (2025-09-18 23:16:54): 📧 Saved Contact: Name: vedu, Email: vedantutpat084@gmail.com
+1. Section 1 - Preamble
+2. Section 2 - Recitals
+3. Section 3 - Agreement
+4. Section 4 - Miscellaneous Provisions
+
+So, there are a total of four sections in the contract.
+USER (2025-09-19 19:13:36): explain Section 294A
+BOT (2025-09-19 19:13:40):  Section 294A of the Indian Penal Code (IPC) pertains to obstruction as an annoying disturbance or interference in any religious worship or assembly. It states that anyone who sings, recites, or utters any obscene songs, ballads, or words in or near any place of worship with the intention of causing annoyance to any person attending religious worship or assembly, shall be punished. The key points are:
+
+1. The act involves singing, reciting, or uttering obscene songs, ballads, or words.
+2. The action takes place in or near any place of worship.
+3. The intention is to cause annoyance to anyone attending religious worship or assembly.
+4. If found guilty under Section 294A, the offender can face imprisonment for a term which may extend to three months, or a fine, or both.
+BOT (2025-09-19 19:14:43): 📧 Saved Contact: Name: vedant, Email: vedantutpat084@gmail.com
+BOT (2025-09-19 19:15:47): 🎙 Recording... Speak now.
+BOT (2025-09-19 19:15:51): 🎙 Recording stopped.
+BOT (2025-09-19 19:15:52): 📝 Recognized: mike testing olama model
+USER (2025-09-19 19:15:52): mike testing olama model
+USER (2025-09-19 19:15:55): mike testing olama model
+BOT (2025-09-19 19:15:57):  Based on the provided context, there is no direct question asked. However, if we were to ask a question based on the information given, it could be "What is the purpose of the 'mike' in this context?" or "How does 'mike' relate to the 'olama model'?" Without additional information, it's hard to definitively answer these questions.
+USER (2025-09-19 19:20:16): whaat is contract end date
+BOT (2025-09-19 19:20:17):  Based on the provided context, there is no explicit mention of a contract end date.
