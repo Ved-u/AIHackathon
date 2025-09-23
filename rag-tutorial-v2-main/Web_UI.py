@@ -176,8 +176,8 @@ with st.sidebar:
     # Email
     if not st.session_state.email_set:
         st.header("📧 Email")
-        email_input = st.text_input("Enter your email (one time):")
         name_input = st.text_input("Enter your name (one time):")
+        email_input = st.text_input("Enter your email (one time):")
         if st.button("Save Email"):
             if email_input:
                 st.session_state.user_email = email_input
