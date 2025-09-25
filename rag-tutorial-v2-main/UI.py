@@ -112,11 +112,9 @@ def save_user_input(text):
     with open(INPUT_FILE, "a", encoding="utf-8") as f:
         f.write(text + "\n")
 
-
 def save_bot_output(text):
     with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
         f.write(text + "\n")
-
 
 def recognize_speech():
     r = sr.Recognizer()
@@ -128,7 +126,6 @@ def recognize_speech():
         return text
     except Exception:
         return None
-
 
 def speak(text):
     def _speak():
@@ -170,7 +167,7 @@ with st.sidebar:
     st.header("📂 Upload Contract")
     uploaded_pdf = st.file_uploader("Upload PDF", type=["pdf"])
     if uploaded_pdf:
-        dest_folder = r"C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data"
+        dest_folder = r"C:\Users\vedan\OneDrive\Desktop\Hackathon\AIHackathon\rag-tutorial-v2-main\data"
         os.makedirs(dest_folder, exist_ok=True)
 
         # Save uploaded file
