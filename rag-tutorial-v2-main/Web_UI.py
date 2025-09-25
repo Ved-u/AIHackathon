@@ -11,6 +11,7 @@ import query_data
 import os
 import shutil
 import Send_Email
+import populate_database
 
 # ---------------------- NLP Model ----------------------
 # nlp = spacy.load("en_core_web_sm")
@@ -169,6 +170,8 @@ with st.sidebar:
             f.write(uploaded_pdf.read())
 
         st.success(f"Uploaded: {file_name}")
+        populate_database.load()
+
         # Example: Extract features
         # st.session_state.extracted_features = extract_features_from_pdf(dest_path)
         # st.json(st.session_state.extracted_features)
