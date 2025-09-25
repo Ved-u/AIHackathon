@@ -1,248 +1,257 @@
-import tkinter as tk
-from tkinter import filedialog, ttk
-import threading
+import streamlit as st
+import pyttsx3
 import speech_recognition as sr
-from datetime import datetime
-import query_data
-import populate_database
-import Send_Email
 import os
+import threading
+import pdfplumber
+import re
+import spacy
+import json
+import query_data
 import shutil
+import Send_Email
+import populate_database
 
-# ---------- Global Variables ----------
-recognizer = sr.Recognizer()
-mic = sr.Microphone()
-recording = False
-stop_thread = False
-last_recognized_text = ""  # Store last recognized speech
-typing_label = None
-mic_animation_job = None
+# ---------------------- NLP Model ----------------------
+nlp = spacy.load("en_core_web_sm")
 
-# ---------- Helper: Save logs ----------
-def save_to_file(sender, message, filename="chat_log.txt"):
-    """Save a message to a file."""
-    with open(filename, "a", encoding="utf-8") as f:
-        f.write(f"{sender.upper()} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}): {message}\n")
+# ---------------------- Feature Extraction ----------------------
+def extract_features_from_pdf(pdf_file):
+    features = {}
+    text = ""
 
-# ---------- Functions ----------
-def upload_pdf():
-    """Let user choose a PDF and copy to data folder"""
-    file_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
-    if file_path:
-        dest_folder = r"C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data"
-        os.makedirs(dest_folder, exist_ok=True)
-        file_name = os.path.basename(file_path)
-        dest_path = os.path.join(dest_folder, file_name)
-        shutil.copy(file_path, dest_path)
-        add_message(f"📄 PDF Uploaded & Saved To:\n{dest_path}", sender="bot")
-        save_to_file("bot", f"📄 PDF Uploaded & Saved To: {dest_path}")
+    # Extract text from PDF
+    with pdfplumber.open(pdf_file) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
 
-def send_message(event=None):
-    user_input = message_entry.get()
-    if user_input.strip():
-        with open("input.txt", "w", encoding="utf-8") as f:
-            f.write(user_input)
+    text = text.strip()
+    features['raw_text'] = text
 
-        add_message(user_input, sender="user")
-        save_to_file("user", user_input)
-        message_entry.delete(0, tk.END)
+    # Handle empty PDF
+    if not text:
+        features.update({
+            "dates": [],
+            "start_date": None,
+            "end_date": None,
+            "parties": [],
+            "contract_value": None,
+            "clauses": [],
+            "organizations": [],
+            "money": []
+        })
+        return features
 
-        bot_response = query_data.query_rag(user_input)
-        add_message(bot_response, sender="bot")
-        save_to_file("bot", bot_response)
+    # Clean text
+    clean_text = re.sub(r'\s+', ' ', text)
 
-def process_button_action():
-    bot_message = f"⚡ Processing: {last_recognized_text}"
-    add_message(bot_message, sender="bot")
-    save_to_file("bot", bot_message)
-    populate_database.load()
-    bot_message = f"⚡ Processed!! Feel Free to Ask Me! : {last_recognized_text}"
-    add_message(bot_message, sender="bot")
-    save_to_file("bot", bot_message)
+    # Extract dates
+    date_pattern = r'\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|(?:\d{1,2}\s+[A-Za-z]+\s+\d{4})|(?:[A-Za-z]+\s+\d{1,2},\s*\d{4}))\b'
+    features['dates'] = re.findall(date_pattern, text, flags=re.IGNORECASE)
 
-def add_message(message, sender="user"):
-    bubble_color = "#D0F0FD" if sender == "user" else "#F0F0F0"
-    text_color = "#000000"
-    anchor_side = "e" if sender == "user" else "w"
-    bubble_frame = tk.Frame(chat_inner_frame, bg="#E8EEF1")
-    bubble_frame.pack(fill="x", pady=6, padx=12, anchor=anchor_side)
-    timestamp = datetime.now().strftime("%H:%M")
-    msg_label = tk.Label(
-        bubble_frame,
-        text=f"{message}\n{timestamp}",
-        bg=bubble_color,
-        fg=text_color,
-        wraplength=450,
-        justify="left",
-        anchor=anchor_side,
-        padx=12,
-        pady=8,
-        font=("Segoe UI", 11),
-        bd=0,
-        relief="solid"
-    )
-    msg_label.pack(anchor=anchor_side, fill="x")
-    chat_canvas.update_idletasks()
-    chat_canvas.yview_moveto(1.0)
-    return msg_label
+    # Start / End date
+    start_match = re.search(r'Contract Start Date[:\-]?\s*([^\n]+)', text, re.IGNORECASE)
+    end_match = re.search(r'Contract End Date[:\-]?\s*([^\n]+)', text, re.IGNORECASE)
+    features['start_date'] = start_match.group(1).strip() if start_match else None
+    features['end_date'] = end_match.group(1).strip() if end_match else None
 
-# ---------- Speech Recognition Functions ----------
-def toggle_recording():
-    global recording, stop_thread, mic_animation_job
-    if not recording:
-        recording = True
-        stop_thread = False
-        mic_button.config(text="⏹ Stop")
-        animate_mic()
-        add_message("🎙 Recording... Speak now.", sender="bot")
-        save_to_file("bot", "🎙 Recording... Speak now.")
-        threading.Thread(target=real_time_listen, daemon=True).start()
-    else:
-        stop_thread = True
-        recording = False
-        mic_button.config(text="🎤 Start", bg="#4CAF50")
-        if mic_animation_job:
-            root.after_cancel(mic_animation_job)
-        add_message("🎙 Recording stopped.", sender="bot")
-        save_to_file("bot", "🎙 Recording stopped.")
+    # Parties
+    parties = []
+    party_match = re.search(r'between\s+(.+?)\s+and\s+(.+?)[,\.]', text, flags=re.IGNORECASE)
+    if party_match:
+        parties.extend([party_match.group(1).strip(), party_match.group(2).strip()])
+    features['parties'] = list(set(parties))
 
-def animate_mic(step=0):
-    global mic_animation_job
-    colors = ["#FF5252", "#FF1744", "#F44336"]
-    mic_button.config(bg=colors[step % len(colors)])
-    mic_animation_job = root.after(300, animate_mic, step + 1)
+    # Contract value
+    money_pattern = r'(?:INR|USD|Rs\.?)\s?[0-9,]+'
+    contract_value = re.search(money_pattern, text)
+    features['contract_value'] = contract_value.group(0) if contract_value else None
 
-def real_time_listen():
-    global stop_thread
-    with mic as source:
-        recognizer.adjust_for_ambient_noise(source)
-        while not stop_thread:
-            try:
-                audio = recognizer.listen(source, timeout=1, phrase_time_limit=5)
-                threading.Thread(target=process_audio, args=(audio,), daemon=True).start()
-            except sr.WaitTimeoutError:
-                continue
+    # Clauses
+    clause_pattern = r'(Section\s+\d+:\s+[^\n]+)'
+    clauses = re.findall(clause_pattern, text, flags=re.IGNORECASE)
+    features['clauses'] = clauses[:5]
 
-def process_audio(audio):
-    global last_recognized_text
+    # NLP entities
+    doc = nlp(text)  # Ensure doc is always defined
+    features['organizations'] = list(set(ent.text for ent in doc.ents if ent.label_ == "ORG"))
+    features['money'] = list(set(ent.text for ent in doc.ents if ent.label_ == "MONEY"))
+
+    return features
+
+# ---------------------- Session State ----------------------
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+if "recording" not in st.session_state:
+    st.session_state.recording = False
+
+if "bot_speech" not in st.session_state:
+    st.session_state.bot_speech = False
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email = ""
+
+if "email_set" not in st.session_state:
+    st.session_state.email_set = False
+
+if "extracted_features" not in st.session_state:
+    st.session_state.extracted_features = {}
+
+INPUT_FILE = "user_input.txt"
+OUTPUT_FILE = "bot_output.txt"
+
+for file in [INPUT_FILE, OUTPUT_FILE]:
+    if not os.path.exists(file):
+        open(file, "w").close()
+
+# ---------------------- Helper Functions ----------------------
+def save_user_input(text):
+    with open(INPUT_FILE, "a", encoding="utf-8") as f:
+        f.write(text + "\n")
+
+
+def save_bot_output(text):
+    with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
+        f.write(text + "\n")
+
+
+def recognize_speech():
+    r = sr.Recognizer()
     try:
-        text = recognizer.recognize_google(audio)
-        last_recognized_text = text
-        message_entry.delete(0, tk.END)
-        message_entry.insert(0, text)
-        add_message(f"📝 Recognized: {text}", sender="bot")
-        save_to_file("bot", f"📝 Recognized: {text}")
-        save_to_file("user", text)
-    except sr.UnknownValueError:
-        pass
-    except sr.RequestError:
-        add_message("⚠ Speech recognition service unavailable.", sender="bot")
-        save_to_file("bot", "⚠ Speech recognition service unavailable.")
+        with sr.Microphone() as source:
+            r.adjust_for_ambient_noise(source, duration=0.5)
+            audio = r.listen(source, timeout=3, phrase_time_limit=5)
+        text = r.recognize_google(audio)
+        return text
+    except Exception:
+        return None
 
-# ---------- Email Popup Function ----------
-def open_email_popup():
-    popup = tk.Toplevel(root)
-    popup.title("Add Email")
-    popup.geometry("300x200")
-    popup.config(bg="#E8EEF1")
 
-    tk.Label(popup, text="Enter Name:", bg="#E8EEF1", font=("Segoe UI", 11)).pack(pady=5)
-    name_entry = tk.Entry(popup, font=("Segoe UI", 11))
-    name_entry.pack(pady=5, padx=10, fill="x")
+def speak(text):
+    def _speak():
+        try:
+            engine = pyttsx3.init()
+            engine.say(text)
+            engine.runAndWait()
+            engine.stop()
+        except Exception as e:
+            print(f"TTS Error: {e}")
 
-    tk.Label(popup, text="Enter Email:", bg="#E8EEF1", font=("Segoe UI", 11)).pack(pady=5)
-    email_entry = tk.Entry(popup, font=("Segoe UI", 11))
-    email_entry.pack(pady=5, padx=10, fill="x")
+    if st.session_state.bot_speech:
+        threading.Thread(target=_speak, daemon=True).start()
 
-    def save_email_info():
-        name = name_entry.get().strip()
-        email = email_entry.get().strip()
-        if name and email:
-            add_message(f"📧 Saved Contact:\nName: {name}, Email: {email}", sender="bot")
-            save_to_file("bot", f"📧 Saved Contact: Name: {name}, Email: {email}")
-            popup.destroy()
-        else:
-            tk.Label(popup, text="⚠ Please fill all fields!", fg="red", bg="#E8EEF1").pack()
-        Send_Email.add_contract_and_notify(name, email)
+def handle_message(message: str):
+    if not message.strip():
+        return
 
-    tk.Button(popup, text="Save", bg="#4CAF50", fg="white", font=("Segoe UI", 11, "bold"),
-              relief="flat", command=save_email_info).pack(pady=15)
+    save_user_input(message)
+    st.session_state.chat_history.append(("user", message))
 
-# ---------- UI Setup ----------
-root = tk.Tk()
-root.title("Chatbot UI with File-based Bot Response")
-root.geometry("900x650")
-root.minsize(700, 500)
-root.configure(bg="#E8EEF1")
+    # Bot response logic
+    # if "contract" in message.lower() and st.session_state.extracted_features:
+    #     bot_reply = f"Here are the extracted contract details:\n{json.dumps(st.session_state.extracted_features, indent=2)}"
+    # else:
+    #     bot_reply = f"Bot response to: {message}"
+    bot_reply = query_data.query_rag(message)
 
-paned = tk.PanedWindow(root, orient=tk.HORIZONTAL, sashrelief="raised")
-paned.pack(fill=tk.BOTH, expand=True)
+    save_bot_output(bot_reply)
+    st.session_state.chat_history.append(("bot", bot_reply))
+    speak(bot_reply)
+
+# ---------------------- Streamlit UI ----------------------
+st.set_page_config(layout="wide")
+st.title("📑 Unity - Contract Chatbot")
 
 # Sidebar
-sidebar_frame = tk.Frame(paned, bg="#1E2A38", width=240)
-sidebar_frame.pack_propagate(False)
+with st.sidebar:
+    st.header("📂 Upload Contract")
+    uploaded_pdf = st.file_uploader("Upload PDF", type=["pdf"])
+    if uploaded_pdf:
+        dest_folder = r"C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data"
+        os.makedirs(dest_folder, exist_ok=True)
 
-tk.Label(sidebar_frame, text="≡", bg="#1E2A38", fg="white",
-         font=("Segoe UI", 20, "bold")).pack(pady=15, anchor="w", padx=15)
+        # Save uploaded file
+        file_name = uploaded_pdf.name
+        dest_path = os.path.join(dest_folder, file_name)
+        
+        # Save uploaded file to dest_path
+        with open(dest_path, "wb") as f:
+            f.write(uploaded_pdf.read())
 
-tk.Label(sidebar_frame, text="CHAT\nBOT", bg="#1E2A38", fg="white",
-         font=("Segoe UI", 26, "bold"), justify="left").pack(pady=20, anchor="w", padx=15)
+        st.success(f"Uploaded: {file_name}")
+        populate_database.load()
 
-btn_style = {
-    "font": ("Segoe UI", 12, "bold"),
-    "relief": "flat",
-    "bd": 0,
-    "activebackground": "#303F9F",
-    "fg": "white"
-}
+        # Extract features
+        st.session_state.extracted_features = extract_features_from_pdf(dest_path)
 
-tk.Button(sidebar_frame, text="Upload PDF", bg="#4CAF50",
-          command=upload_pdf, **btn_style).pack(pady=15, padx=20, fill="x")
+        # Display key features
+        st.subheader("📝 Extracted Features")
+        features = st.session_state.extracted_features
+        st.markdown(f"*Start Date:* {features.get('start_date')}")
+        st.markdown(f"*End Date:* {features.get('end_date')}")
+        st.markdown(f"*Parties:* {', '.join(features.get('parties', []))}")
+        st.markdown(f"*Contract Value:* {features.get('contract_value')}")
+        st.markdown("*Clauses:*")
+        for clause in features.get('clauses', []):
+            st.markdown(f"- {clause}")
 
-tk.Button(sidebar_frame, text="Process", bg="#3F51B5",
-          command=process_button_action, **btn_style).pack(pady=15, padx=20, fill="x")
+    # Email
+    if not st.session_state.email_set:
+        st.header("📧 Email")
+        name_input = st.text_input("Enter your name (one time):")
+        email_input = st.text_input("Enter your email (one time):")
 
-tk.Button(sidebar_frame, text="Add Email", bg="#FF9800",
-          command=open_email_popup, **btn_style).pack(pady=15, padx=20, fill="x")
+        if st.button("Save Email"):
+            if email_input:
+                st.session_state.user_email = email_input
+                st.session_state.email_set = True
+                st.success("Email saved!")
+                Send_Email.add_contract_and_notify(name_input, email_input)
+                st.rerun()
+    else:
+        st.success(f"Email: {st.session_state.user_email}")
 
-paned.add(sidebar_frame, width=240)
+    # Voice input
+    st.header("🎙️ Voice Input")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🎤 Start Recording", disabled=st.session_state.recording):
+            st.session_state.recording = True
+            st.rerun()
+    with col2:
+        if st.button("🛑 Stop Recording", disabled=not st.session_state.recording):
+            st.session_state.recording = False
+            st.rerun()
 
-# Chat Area
-chat_frame = tk.Frame(paned, bg="#E8EEF1")
-chat_canvas = tk.Canvas(chat_frame, bg="#E8EEF1", highlightthickness=0)
-chat_scrollbar = ttk.Scrollbar(chat_frame, orient="vertical", command=chat_canvas.yview)
-chat_scrollbar.pack(side="right", fill="y")
-chat_canvas.pack(side="top", fill="both", expand=True)
-chat_canvas.configure(yscrollcommand=chat_scrollbar.set)
+    if st.session_state.recording:
+        st.warning("🔴 Recording... Speak now!")
+        speech_text = recognize_speech()
+        if speech_text:
+            st.session_state.recording = False
+            handle_message(speech_text)
+            st.rerun()
+    else:
+        st.info("⚫ Ready to record")
 
-chat_inner_frame = tk.Frame(chat_canvas, bg="#E8EEF1")
-chat_window = chat_canvas.create_window((0, 0), window=chat_inner_frame, anchor="nw")
+    # Bot voice
+    st.header("🔊 Bot Voice Response")
+    st.session_state.bot_speech = st.checkbox("Enable Bot Voice Output", value=st.session_state.bot_speech)
 
-chat_inner_frame.bind(
-    "<Configure>",
-    lambda e: chat_canvas.configure(scrollregion=chat_canvas.bbox("all"))
-)
+# Main chat area
+st.subheader("💬 Conversation")
+for sender, message in st.session_state.chat_history:
+    if sender == "user":
+        st.markdown(f"👤 You: *{message}*")
+    else:
+        st.markdown(f"*🤖 Bot:* {message}")
 
-# Bottom Input
-bottom_frame = tk.Frame(chat_frame, bg="#FFFFFF", bd=1, relief="solid")
-bottom_frame.pack(side="bottom", fill="x", pady=5, padx=5)
-
-message_entry = tk.Entry(bottom_frame, font=("Segoe UI", 12),
-                         relief="flat", bg="#F5F5F5", bd=0)
-message_entry.pack(side="left", fill="x", expand=True, padx=(0, 8), pady=5)
-message_entry.bind("<Return>", send_message)
-
-mic_button = tk.Button(bottom_frame, text="🎤 Start", font=("Segoe UI", 12, "bold"),
-                       bg="#4CAF50", fg="white", relief="flat", command=toggle_recording)
-mic_button.pack(side="left", padx=5, pady=5)
-
-send_button = tk.Button(bottom_frame, text="➤", font=("Segoe UI", 12, "bold"),
-                        bg="#2196F3", fg="white", relief="flat", command=send_message)
-send_button.pack(side="right", pady=5)
-
-paned.add(chat_frame)
-
-root.update_idletasks()
-paned.sash_place(0, 240, 0)
-
-root.mainloop()
+# Input form
+with st.form(key="message_form", clear_on_submit=True):
+    user_input = st.text_input("Enter your message:", placeholder="Type your message...")
+    submit_button = st.form_submit_button("Send")
+    if submit_button and user_input:
+        handle_message(user_input)
+        st.rerun()
