@@ -158,7 +158,7 @@ with st.sidebar:
     st.header("📂 Upload Contract")
     uploaded_pdf = st.file_uploader("Upload PDF", type=["pdf"])
     if uploaded_pdf:
-        dest_folder = r"C:\Users\ekta.sonawane\Downloads\AIHackathon-hackathon\AIHackathon-hackathon\rag-tutorial-v2-main\data"
+        dest_folder = r"C:\Users\vedan\OneDrive\Desktop\Hackathon\AIHackathon\rag-tutorial-v2-main\data"
         os.makedirs(dest_folder, exist_ok=True)
 
         file_name = uploaded_pdf.name
