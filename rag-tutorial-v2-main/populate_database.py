@@ -6,6 +6,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 from langchain.vectorstores.chroma import Chroma
+import time
+from chromadb import PersistentClient
 
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
@@ -25,7 +27,7 @@ def main():
     add_to_chroma(chunks)
 
 def load():
-    clear_database()
+    # clear_database()
     # Create (or update) the data store.
     documents = load_documents()
     chunks = split_documents(documents)
@@ -103,6 +105,28 @@ def calculate_chunk_ids(chunks):
 def clear_database():
     if os.path.exists(CHROMA_PATH):
         shutil.rmtree(CHROMA_PATH)
+    # Close client
+    # client = PersistentClient(path=CHROMA_PATH)
+    # client.reset()  # release handles
+
+def clear_database_new():
+    # Close Chroma client before deleting (if applicable)
+    try:
+        import chromadb
+        client = chromadb.PersistentClient(path=CHROMA_PATH)
+        client.reset()  # releases file handles
+    except Exception as e:
+        print(f"Warning: could not reset Chroma client: {e}")
+
+    # Retry delete in case Windows still holds a lock
+    for attempt in range(5):
+        try:
+            if os.path.exists(CHROMA_PATH):
+                shutil.rmtree(CHROMA_PATH)
+            break
+        except PermissionError:
+            print(f"⚠️ Files still locked, retrying... ({attempt+1}/5)")
+            time.sleep(1)  # wait 1s before retry
 
 if __name__ == "__main__":
     main()

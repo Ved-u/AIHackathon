@@ -6,11 +6,11 @@ import threading
 import pdfplumber
 import re
 import spacy
-import json
 import query_data
-import shutil
 import Send_Email
 import populate_database
+import json
+import shutil
 
 # ---------------------- NLP Model ----------------------
 nlp = spacy.load("en_core_web_sm")
@@ -152,10 +152,12 @@ def handle_message(message: str):
     #     bot_reply = f"Here are the extracted contract details:\n{json.dumps(st.session_state.extracted_features, indent=2)}"
     # else:
     #     bot_reply = f"Bot response to: {message}"
-    bot_reply = query_data.query_rag(message)
+    with st.spinner("Generating response..."):
+        bot_reply = query_data.query_rag(message)  # This might take time
+    # bot_reply = query_data.query_rag(message)
 
     save_bot_output(bot_reply)
-    st.session_state.chat_history.append(("bot", bot_reply))
+    st.session_state.chat_history.append(("Unity:", bot_reply))
     speak(bot_reply)
 
 # ---------------------- Streamlit UI ----------------------
@@ -178,22 +180,22 @@ with st.sidebar:
         with open(dest_path, "wb") as f:
             f.write(uploaded_pdf.read())
 
-        st.success(f"Uploaded: {file_name}")
         populate_database.load()
+        st.success(f"Uploaded: {file_name}")
 
         # Extract features
         st.session_state.extracted_features = extract_features_from_pdf(dest_path)
 
-        # Display key features
-        st.subheader("📝 Extracted Features")
-        features = st.session_state.extracted_features
-        st.markdown(f"*Start Date:* {features.get('start_date')}")
-        st.markdown(f"*End Date:* {features.get('end_date')}")
-        st.markdown(f"*Parties:* {', '.join(features.get('parties', []))}")
-        st.markdown(f"*Contract Value:* {features.get('contract_value')}")
-        st.markdown("*Clauses:*")
-        for clause in features.get('clauses', []):
-            st.markdown(f"- {clause}")
+        # # Display key features
+        # st.subheader("📝 Extracted Features")
+        # features = st.session_state.extracted_features
+        # st.markdown(f"*Start Date:* {features.get('start_date')}")
+        # st.markdown(f"*End Date:* {features.get('end_date')}")
+        # st.markdown(f"*Parties:* {', '.join(features.get('parties', []))}")
+        # st.markdown(f"*Contract Value:* {features.get('contract_value')}")
+        # st.markdown("*Clauses:*")
+        # for clause in features.get('clauses', []):
+        #     st.markdown(f"- {clause}")
 
     # Email
     if not st.session_state.email_set:
@@ -234,8 +236,20 @@ with st.sidebar:
         st.info("⚫ Ready to record")
 
     # Bot voice
-    st.header("🔊 Bot Voice Response")
-    st.session_state.bot_speech = st.checkbox("Enable Bot Voice Output", value=st.session_state.bot_speech)
+    st.header("🔊 Unity Voice Response")
+    st.session_state.bot_speech = st.checkbox("Enable Unity Voice Output", value=st.session_state.bot_speech)
+
+    # Exctracted Features
+    # Display key features
+    st.subheader("📝 Extracted Features")
+    features = st.session_state.extracted_features
+    st.markdown(f"*Start Date:* {features.get('start_date')}")
+    st.markdown(f"*End Date:* {features.get('end_date')}")
+    st.markdown(f"*Parties:* {', '.join(features.get('parties', []))}")
+    st.markdown(f"*Contract Value:* {features.get('contract_value')}")
+    st.markdown("*Clauses:*")
+    for clause in features.get('clauses', []):
+        st.markdown(f"- {clause}")
 
 # Main chat area
 st.subheader("💬 Conversation")
@@ -243,11 +257,11 @@ for sender, message in st.session_state.chat_history:
     if sender == "user":
         st.markdown(f"👤 You: *{message}*")
     else:
-        st.markdown(f"*🤖 Bot:* {message}")
+        st.markdown(f"*🤖 Unity:* {message}")
 
 # Input form
 with st.form(key="message_form", clear_on_submit=True):
-    user_input = st.text_input("Enter your message:", placeholder="Type your message...")
+    user_input = st.text_area("Enter your message:", placeholder="Type your message...")
     submit_button = st.form_submit_button("Send")
     if submit_button and user_input:
         handle_message(user_input)
