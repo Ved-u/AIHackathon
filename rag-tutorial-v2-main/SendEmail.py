@@ -9,7 +9,7 @@ from email.mime.multipart import MIMEMultipart
 SMTP_SERVER = "smtp.gmail.com"  # Gmail SMTP server
 SMTP_PORT = 587
 EMAIL_ADDRESS = "utpatvedant96@gmail.com"  # Your email
-EMAIL_PASSWORD = "iauy nfth uzey xbec"  # ⚠️ App password (not normal password)
+EMAIL_PASSWORD = ""  # ⚠️ App password (not normal password)
 
 # -----------------------------
 # CONTRACTS DATA
