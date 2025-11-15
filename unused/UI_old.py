@@ -10,9 +10,9 @@ import pytesseract
 from pdf2image import convert_from_path
 import json
 import query_data
-import shutil
+# import shutil
 import Send_Email
-import populate_database
+# import populate_database
 
 # ---------------------- NLP Model ----------------------
 nlp = spacy.load("en_core_web_sm")

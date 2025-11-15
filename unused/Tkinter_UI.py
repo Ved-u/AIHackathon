@@ -3,8 +3,8 @@ from tkinter import filedialog, ttk
 import threading
 import speech_recognition as sr
 from datetime import datetime
-import query_data
-import populate_database
+from RAG import query_data
+from RAG import populate_database
 import Send_Email
 import os
 import shutil
