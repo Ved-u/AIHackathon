@@ -9,7 +9,7 @@ import spacy
 import pytesseract
 from pdf2image import convert_from_path
 import json
-import query_data
+from RAG import query_data
 # import shutil
 import Send_Email
 # import populate_database
