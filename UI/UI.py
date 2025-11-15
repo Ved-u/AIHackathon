@@ -73,7 +73,7 @@ with st.sidebar:
                     except Exception as e:
                         print(f"Could not delete {file}: {e}")
         # Clear DB
-        populate_database.clear_database() 
+        populate_database.clear_database_new() 
         st.success("Database cleared successfully!")
 
     # Email
