@@ -91,6 +91,3 @@ if __name__ == "__main__":
     # Normal: check predefined contracts
     check_contracts()
 
-    # OR dynamically add a new one and send mail immediately
-    # Example usage:
-    # add_contract_and_notify("New User", "newuser@example.com", "2025-12-31")

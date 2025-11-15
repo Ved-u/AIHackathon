@@ -29,7 +29,8 @@ def upload_pdf():
     """Let user choose a PDF and copy to data folder"""
     file_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
     if file_path:
-        dest_folder = r"C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data"
+        # dest_folder = r"C:\Users\vedan\OneDrive\Desktop\Hackathon\AIHackathon\rag-tutorial-v2-main\data"
+        dest_folder = r"D:\OneDrive - SoftDEL Systems Pvt. Ltd\GAP\AIHackathon\rag-tutorial-v2-main\data"
         os.makedirs(dest_folder, exist_ok=True)
         file_name = os.path.basename(file_path)
         dest_path = os.path.join(dest_folder, file_name)

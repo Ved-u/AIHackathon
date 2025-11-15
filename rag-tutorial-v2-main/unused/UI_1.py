@@ -6,6 +6,8 @@ import threading
 import pdfplumber
 import re
 import spacy
+import pytesseract
+from pdf2image import convert_from_path
 import json
 import query_data
 import shutil
@@ -15,69 +17,55 @@ import populate_database
 # ---------------------- NLP Model ----------------------
 nlp = spacy.load("en_core_web_sm")
 
-# ---------------------- Feature Extraction ----------------------
+# ---------------------- Extract Features ----------------------
 def extract_features_from_pdf(pdf_file):
-    features = {}
-    text = ""
+    features = {
+        "start_date": None,
+        "end_date": None,
+        "contract_value": None,
+        "parties": []
+    }
 
     # Extract text from PDF
+    text = ""
     with pdfplumber.open(pdf_file) as pdf:
         for page in pdf.pages:
             page_text = page.extract_text()
             if page_text:
-                text += page_text + "\n"
+                text += page_text + " "
 
-    text = text.strip()
-    features['raw_text'] = text
+    # OCR fallback if no text (scanned PDF)
+    if not text.strip():
+        images = convert_from_path(pdf_file)
+        for img in images:
+            text += pytesseract.image_to_string(img)
 
-    # Handle empty PDF
+    text = re.sub(r'\s+', ' ', text).strip()
     if not text:
-        features.update({
-            "dates": [],
-            "start_date": None,
-            "end_date": None,
-            "parties": [],
-            "contract_value": None,
-            "clauses": [],
-            "organizations": [],
-            "money": []
-        })
         return features
 
-    # Clean text
-    clean_text = re.sub(r'\s+', ' ', text)
+    # Dates
+    start_match = re.search(
+        r'(?:Start Date|Contract Start Date|Commencement Date|Effective Date)[:\-]?\s*([0-9]{1,2}[A-Za-z]*[ -/]\w+[ -/][0-9]{2,4})',
+        text, re.IGNORECASE)
+    end_match = re.search(
+        r'(?:End Date|Contract End Date|Termination Date|Expiry Date)[:\-]?\s*([0-9]{1,2}[A-Za-z]*[ -/]\w+[ -/][0-9]{2,4})',
+        text, re.IGNORECASE)
 
-    # Extract dates
-    date_pattern = r'\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|(?:\d{1,2}\s+[A-Za-z]+\s+\d{4})|(?:[A-Za-z]+\s+\d{1,2},\s*\d{4}))\b'
-    features['dates'] = re.findall(date_pattern, text, flags=re.IGNORECASE)
+    if start_match:
+        features["start_date"] = start_match.group(1).strip()
+    if end_match:
+        features["end_date"] = end_match.group(1).strip()
 
-    # Start / End date
-    start_match = re.search(r'Contract Start Date[:\-]?\s*([^\n]+)', text, re.IGNORECASE)
-    end_match = re.search(r'Contract End Date[:\-]?\s*([^\n]+)', text, re.IGNORECASE)
-    features['start_date'] = start_match.group(1).strip() if start_match else None
-    features['end_date'] = end_match.group(1).strip() if end_match else None
+    # Contract Value
+    money_match = re.search(r'(?:INR|Rs\.?|USD|EUR|GBP)\s?[0-9,]+(?:\.\d{1,2})?', text, re.IGNORECASE)
+    if money_match:
+        features["contract_value"] = money_match.group(0)
 
     # Parties
-    parties = []
-    party_match = re.search(r'between\s+(.+?)\s+and\s+(.+?)[,\.]', text, flags=re.IGNORECASE)
+    party_match = re.findall(r'between\s+(.+?)\s+and\s+(.+?)(?:,|\.|\n)', text, re.IGNORECASE)
     if party_match:
-        parties.extend([party_match.group(1).strip(), party_match.group(2).strip()])
-    features['parties'] = list(set(parties))
-
-    # Contract value
-    money_pattern = r'(?:INR|USD|Rs\.?)\s?[0-9,]+'
-    contract_value = re.search(money_pattern, text)
-    features['contract_value'] = contract_value.group(0) if contract_value else None
-
-    # Clauses
-    clause_pattern = r'(Section\s+\d+:\s+[^\n]+)'
-    clauses = re.findall(clause_pattern, text, flags=re.IGNORECASE)
-    features['clauses'] = clauses[:5]
-
-    # NLP entities
-    doc = nlp(text)  # Ensure doc is always defined
-    features['organizations'] = list(set(ent.text for ent in doc.ents if ent.label_ == "ORG"))
-    features['money'] = list(set(ent.text for ent in doc.ents if ent.label_ == "MONEY"))
+        features["parties"] = list(party_match[0])
 
     return features
 
@@ -112,11 +100,9 @@ def save_user_input(text):
     with open(INPUT_FILE, "a", encoding="utf-8") as f:
         f.write(text + "\n")
 
-
 def save_bot_output(text):
     with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
         f.write(text + "\n")
-
 
 def recognize_speech():
     r = sr.Recognizer()
@@ -128,7 +114,6 @@ def recognize_speech():
         return text
     except Exception:
         return None
-
 
 def speak(text):
     def _speak():
@@ -143,6 +128,7 @@ def speak(text):
     if st.session_state.bot_speech:
         threading.Thread(target=_speak, daemon=True).start()
 
+# ---------------------- Handle Message ----------------------
 def handle_message(message: str):
     if not message.strip():
         return
@@ -150,12 +136,14 @@ def handle_message(message: str):
     save_user_input(message)
     st.session_state.chat_history.append(("user", message))
 
-    # Bot response logic
-    # if "contract" in message.lower() and st.session_state.extracted_features:
-    #     bot_reply = f"Here are the extracted contract details:\n{json.dumps(st.session_state.extracted_features, indent=2)}"
-    # else:
-    #     bot_reply = f"Bot response to: {message}"
-    bot_reply = query_data.query_rag(message)
+    with st.spinner("🤖 Bot is generating response..."):
+        # Bot response logic
+        bot_reply = ""
+        if "contract" in message.lower() and st.session_state.extracted_features:
+            bot_reply = f"Here are the extracted contract details:\n{json.dumps(st.session_state.extracted_features, indent=2)}"
+        else:
+            # Use your RAG model query
+            bot_reply = query_data.query_rag(message)
 
     save_bot_output(bot_reply)
     st.session_state.chat_history.append(("bot", bot_reply))
@@ -170,33 +158,33 @@ with st.sidebar:
     st.header("📂 Upload Contract")
     uploaded_pdf = st.file_uploader("Upload PDF", type=["pdf"])
     if uploaded_pdf:
-        dest_folder = r"C:\Vedant\CS\Projects\GitHub\AI-Hackathon\AIHackathon\rag-tutorial-v2-main\data"
+        # dest_folder = r"C:\Users\vedan\OneDrive\Desktop\Hackathon\AIHackathon\rag-tutorial-v2-main\data"
+        dest_folder = r"D:\OneDrive - SoftDEL Systems Pvt. Ltd\GAP\AIHackathon\rag-tutorial-v2-main\data"
         os.makedirs(dest_folder, exist_ok=True)
 
-        # Save uploaded file
         file_name = uploaded_pdf.name
         dest_path = os.path.join(dest_folder, file_name)
-        
-        # Save uploaded file to dest_path
+
         with open(dest_path, "wb") as f:
             f.write(uploaded_pdf.read())
 
         st.success(f"Uploaded: {file_name}")
-        populate_database.load()
 
         # Extract features
         st.session_state.extracted_features = extract_features_from_pdf(dest_path)
 
-        # Display key features
-        st.subheader("📝 Extracted Features")
-        features = st.session_state.extracted_features
-        st.markdown(f"*Start Date:* {features.get('start_date')}")
-        st.markdown(f"*End Date:* {features.get('end_date')}")
-        st.markdown(f"*Parties:* {', '.join(features.get('parties', []))}")
-        st.markdown(f"*Contract Value:* {features.get('contract_value')}")
-        st.markdown("*Clauses:*")
-        for clause in features.get('clauses', []):
-            st.markdown(f"- {clause}")
+        # # Display key features (only if available)
+        # st.subheader("📝 Extracted Features")
+        # features = st.session_state.extracted_features
+
+        # if features.get("start_date"):
+        #     st.markdown(f"*Start Date:* {features.get('start_date')}")
+        # if features.get("end_date"):
+        #     st.markdown(f"*End Date:* {features.get('end_date')}")
+        # if features.get("contract_value"):
+        #     st.markdown(f"*Contract Value:* {features.get('contract_value')}")
+        # if features.get("parties"):
+        #     st.markdown(f"*Parties:* {features.get('parties')}")
 
     # Email
     if not st.session_state.email_set:
@@ -240,6 +228,18 @@ with st.sidebar:
     st.header("🔊 Bot Voice Response")
     st.session_state.bot_speech = st.checkbox("Enable Bot Voice Output", value=st.session_state.bot_speech)
 
+    # Display key features (only if available)
+    st.subheader("📝 Extracted Features")
+    features = st.session_state.extracted_features
+
+    if features.get("start_date"):
+        st.markdown(f"*Start Date:* {features.get('start_date')}")
+    if features.get("end_date"):
+        st.markdown(f"*End Date:* {features.get('end_date')}")
+    if features.get("contract_value"):
+        st.markdown(f"*Contract Value:* {features.get('contract_value')}")
+    if features.get("parties"):
+        st.markdown(f"*Parties:* {features.get('parties')}")
 # Main chat area
 st.subheader("💬 Conversation")
 for sender, message in st.session_state.chat_history:
@@ -254,4 +254,4 @@ with st.form(key="message_form", clear_on_submit=True):
     submit_button = st.form_submit_button("Send")
     if submit_button and user_input:
         handle_message(user_input)
-        st.rerun()
+        st.experimental_rerun()

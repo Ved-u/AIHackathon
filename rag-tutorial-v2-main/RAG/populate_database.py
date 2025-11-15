@@ -1,19 +1,21 @@
 import argparse
 import os
 import shutil
-from langchain.document_loaders.pdf import PyPDFDirectoryLoader
+# from langchain.document_loaders.pdf import PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.schema.document import Document
-from get_embedding_function import get_embedding_function
-from langchain.vectorstores.chroma import Chroma
-
+# from langchain.schema.document import Document
+from langchain_core.documents import Document
+from RAG.get_embedding_function import get_embedding_function
+# from langchain.vectorstores.chroma import Chroma
+from langchain_community.vectorstores import Chroma
+import time
+from chromadb import PersistentClient
 
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
 
-
 def main():
-
     # Check if the database should be cleared (using the --clear flag).
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset", action="store_true", help="Reset the database.")
@@ -28,7 +30,7 @@ def main():
     add_to_chroma(chunks)
 
 def load():
-    clear_database()
+    # clear_database()
     # Create (or update) the data store.
     documents = load_documents()
     chunks = split_documents(documents)
@@ -38,7 +40,6 @@ def load_documents():
     document_loader = PyPDFDirectoryLoader(DATA_PATH)
     return document_loader.load()
 
-
 def split_documents(documents: list[Document]):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
@@ -47,7 +48,6 @@ def split_documents(documents: list[Document]):
         is_separator_regex=False,
     )
     return text_splitter.split_documents(documents)
-
 
 def add_to_chroma(chunks: list[Document]):
     # Load the existing database.
@@ -77,7 +77,6 @@ def add_to_chroma(chunks: list[Document]):
     else:
         print("✅ No new documents to add")
 
-
 def calculate_chunk_ids(chunks):
 
     # This will create IDs like "data/monopoly.pdf:6:2"
@@ -106,11 +105,31 @@ def calculate_chunk_ids(chunks):
 
     return chunks
 
-
 def clear_database():
     if os.path.exists(CHROMA_PATH):
         shutil.rmtree(CHROMA_PATH)
+    # Close client
+    # client = PersistentClient(path=CHROMA_PATH)
+    # client.reset()  # release handles
 
+def clear_database_new():
+    # Close Chroma client before deleting (if applicable)
+    try:
+        import chromadb
+        client = chromadb.PersistentClient(path=CHROMA_PATH)
+        client.reset()  # releases file handles
+    except Exception as e:
+        print(f"Warning: could not reset Chroma client: {e}")
+
+    # Retry delete in case Windows still holds a lock
+    for attempt in range(5):
+        try:
+            if os.path.exists(CHROMA_PATH):
+                shutil.rmtree(CHROMA_PATH)
+            break
+        except PermissionError:
+            print(f"⚠️ Files still locked, retrying... ({attempt+1}/5)")
+            time.sleep(1)  # wait 1s before retry
 
 if __name__ == "__main__":
     main()
