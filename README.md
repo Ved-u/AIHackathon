@@ -1,8 +1,7 @@
 # AIHackathon
 AI-Hackathon
 
-# rag-tutorial-v2
-#Dependencies
+# Dependencies
 pypdf
 langchain
 chromadb # Vector storage
