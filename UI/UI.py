@@ -10,7 +10,7 @@ from RAG import populate_database
 import Send_Email
 
 # Global Variable for path to data folder for storing PDFs
-PATH = r"C:\Vedant\CS\Projects\GAP\GAP\AIHackathon\\data"
+PATH = r"C:\Vedant\CS\Projects\GAP\GAP\AIHackathon\UI\data"
 
 # ---------------------- Session State ----------------------
 if "chat_history" not in st.session_state:
@@ -26,11 +26,14 @@ def handle_message(message: str):
     if not message.strip():
         return
 
+    # For Keeping Chat History 
     st.session_state.chat_history.append(("user", message))
 
+    # Generate Response through RAG & LLM
     with st.spinner("Generating response..."):
         bot_reply = query_data.query_rag(message)  # This might take time
 
+    # For Keeping Chat History 
     st.session_state.chat_history.append(("UniSoft:", bot_reply))
    
 
