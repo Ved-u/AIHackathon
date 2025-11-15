@@ -5,7 +5,7 @@ import speech_recognition as sr
 from datetime import datetime
 from RAG import query_data
 from RAG import populate_database
-import Send_Email
+import UI.Send_Email as Send_Email
 import os
 import shutil
 
