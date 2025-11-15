@@ -27,7 +27,6 @@ def main():
     add_to_chroma(chunks)
 
 def load():
-    clear_database()
     documents = load_documents()
     chunks = split_documents(documents)
     add_to_chroma(chunks)
@@ -104,10 +103,8 @@ def calculate_chunk_ids(chunks):
 def clear_database():
     if os.path.exists(CHROMA_PATH):
         shutil.rmtree(CHROMA_PATH)
-    # Close client
-    # client = PersistentClient(path=CHROMA_PATH)
-    # client.reset()  # release handles
 
+# Never Called this function because above is safe enough
 def clear_database_new():
     # Close Chroma client before deleting (if applicable)
     try:

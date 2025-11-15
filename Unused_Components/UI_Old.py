@@ -149,7 +149,7 @@ def handle_message(message: str):
 
 # ---------------------- Streamlit UI ----------------------
 st.set_page_config(layout="wide")
-st.title("📑 Unity - Contract Chatbot")
+st.title("📑 UniSoft - Contract Chatbot")
 
 # Sidebar
 with st.sidebar:

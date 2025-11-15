@@ -31,15 +31,16 @@ def handle_message(message: str):
     with st.spinner("Generating response..."):
         bot_reply = query_data.query_rag(message)  # This might take time
 
-    st.session_state.chat_history.append(("Unity:", bot_reply))
+    st.session_state.chat_history.append(("UniSoft:", bot_reply))
    
 
 # ---------------------- Streamlit UI ----------------------
 st.set_page_config(layout="wide")
-st.title("📑 Unity - Contract Chatbot")
+st.title("📑 UniSoft - Contract Chatbot")
 
 # Sidebar
 with st.sidebar:
+    # Upload Button 
     st.header("📂 Upload Contract")
     uploaded_pdf = st.file_uploader("Upload PDF", type=["pdf"])
     if uploaded_pdf:
@@ -57,6 +58,20 @@ with st.sidebar:
 
         populate_database.load()
         st.success(f"Uploaded: {file_name}")
+
+    # Clear Database button
+    if st.button("🧹 Clear DB"):
+        # Clear Context by deleting PDFs and DB
+        if os.path.exists(PATH):
+            for file in os.listdir(PATH):
+                if file.lower().endswith(".pdf"):
+                    try:
+                        os.remove(os.path.join(PATH, file))
+                    except Exception as e:
+                        print(f"Could not delete {file}: {e}")
+        # Clear DB
+        populate_database.clear_database() 
+        st.success("Database cleared successfully!")
 
     # Email
     if not st.session_state.email_set:
@@ -81,7 +96,7 @@ for sender, message in st.session_state.chat_history:
     if sender == "user":
         st.markdown(f"👤 You: *{message}*")
     else:
-        st.markdown(f"*🤖 Unity:* {message}")
+        st.markdown(f"*🤖 UniSoft:* {message}")
 
 # Input form
 with st.form(key="message_form", clear_on_submit=True):
