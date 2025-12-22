@@ -24,6 +24,10 @@ if "user_email" not in st.session_state:
 if "email_set" not in st.session_state:
     st.session_state.email_set = False
 
+# ---------------------- Refresh Function (ADDED) ----------------------
+def refresh_app():
+    st.rerun()
+    
 def handle_message(message: str):
     if not message.strip():
         return
@@ -107,6 +111,10 @@ with st.sidebar:
         # Clear DB
         populate_database.clear_database_new() 
         st.success("Database cleared successfully!")
+     # ---------------------- Refresh Button (ADDED) ----------------------
+    st.divider()
+    if st.button("🔄 Refresh"):
+        refresh_app()
 
     # Email
     if not st.session_state.email_set:
