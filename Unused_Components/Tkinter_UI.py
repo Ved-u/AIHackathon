@@ -3,9 +3,9 @@ from tkinter import filedialog, ttk
 import threading
 import speech_recognition as sr
 from datetime import datetime
-import query_data
-import populate_database
-import Send_Email
+from RAG import query_data
+from RAG import populate_database
+import UI.Send_Email as Send_Email
 import os
 import shutil
 

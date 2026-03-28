@@ -1,0 +1,37 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ROOT VARIABLES */
+:root {
+  --bg: #F5F5F5;
+  --text: #1A1A2E;
+}
+
+/* BODY */
+body {
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+
+/* FULL APP WIDTH */
+#root {
+  width: 100%;
+  height: 100vh;
+}
